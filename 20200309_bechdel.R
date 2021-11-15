@@ -25,8 +25,8 @@ bechdelDF <- data.frame(bechdel)
 #match ids better
 ratingsDF$imdb_id = str_replace(ratingsDF$imdb, 'tt', '')
 ratingsDF$domgross_2013_num = as.numeric(ratingsDF$domgross_2013)
-#as.numeric(str_replace(ratingsDF$domgross_2013, '#N/A', '0')) #old version
 ratingsDF$intgross_2013_num = as.numeric(ratingsDF$intgross_2013)
+#be careful of unfair comparisons between movies with dom vs intl vs both
 ratingsDF$gross2013 = ratingsDF$domgross_2013_num + ratingsDF$intgross_2013_num
 ratingsDF$profit2013 = ratingsDF$gross2013 - ratingsDF$budget_2013
 
@@ -38,7 +38,7 @@ comboInner <- inner_join(ratings, bechdel, by = "imdb_id")
 g_bechdel <- bechdelDF %>% count(year, rating) #number of movies per year per rating
 g_bechdel[1:10,]
 
-#small mult
+#small mult, # per year, by rating
 plotb1 <- ggplot(data = g_bechdel, aes(x=year, y=n, fill=rating)) +
   geom_col() + 
   facet_grid(cols = vars(rating))
@@ -56,7 +56,7 @@ plotb3
 
 ####INTERESTING VARIABLES#####
 #budget_2013
-#rated
+#rated #i.e. PG13
 #metascore
 #imdb_rating
 #imdb_votes
@@ -65,15 +65,42 @@ plotb3
 #gross2013
 #profit2013
 #rating #bechdel score
+#language 
+#country
 
-#run some regressions
+# try hierarchical regression
+# https://data.library.virginia.edu/hierarchical-linear-regression/
 
-#start by comparing budget to bechdel
-m1a <- lm(budget_2013 ~ 1, data=comboInner) #to obtain total SS
+# comparing budget to bechdel
+
+# block 1, control variables, what are you controlling for?
+m1a <- lm(budget_2013 ~ 1, data=comboInner) #to obtain total SS 
+# block 2, impact of year
 m1b <- lm(budget_2013 ~ year.x, data=comboInner) #compare to year
+# block 3, impact of bechdel score
 m1c <- lm(budget_2013 ~ year.x + rating, data=comboInner) #year + Bechdel score
+summary(m1c)
+#would be nice to scale this down a little
 
-anova(m1a) ##Total SS = 5.4076e+18
-anova(m1a, m1b, m1c)
-anova(m1b, m1c) #https://data.library.virginia.edu/hierarchical-linear-regression/
+max(comboInner$budget_2013)
+min(comboInner$budget_2013)
 
+dataUS <- comboInner[comboInner[, "country"] == "USA", ]
+dataUS <- dataUS[complete.cases(dataUS[ , "budget_2013"]), ]
+max(dataUS$budget_2013)
+min(dataUS$budget_2013)
+
+ggplot(data = dataUS, aes(x=budget_2013, y=budget_2013, fill=rating)) +
+  geom_point()
+
+#scale down millions
+dataUS$budget_millions <- dataUS$budget_2013 / 1000000
+
+m1c2 <- lm(budget_millions ~ year.x + rating, data=dataUS) #year + Bechdel score
+summary(m1c2)
+
+
+
+
+anova(m1a)  ##Total SS = 5.4076e+18
+anova(m1a, m1b, m1c) 
