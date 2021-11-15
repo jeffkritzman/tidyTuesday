@@ -68,8 +68,7 @@ plotb3
 #language 
 #country
 
-# try hierarchical regression
-# https://data.library.virginia.edu/hierarchical-linear-regression/
+# try some regression!
 
 # comparing budget to bechdel
 
@@ -96,11 +95,20 @@ ggplot(data = dataUS, aes(x=budget_2013, y=budget_2013, fill=rating)) +
 #scale down millions
 dataUS$budget_millions <- dataUS$budget_2013 / 1000000
 
+m1a2 <- lm(budget_millions ~ 1, data=dataUS) #to obtain total SS 
+m1b2 <- lm(budget_millions ~ year.x, data=dataUS) #compare to year
 m1c2 <- lm(budget_millions ~ year.x + rating, data=dataUS) #year + Bechdel score
-summary(m1c2)
+summary(m1c2) 
+# $.67M budget increase per year
+# $7.1M budget DECREASE per additional point on the bechdel score!
+# both significant to p < 0.001
 
 
+# hierarchical regression
+# https://data.library.virginia.edu/hierarchical-linear-regression/
 
-
-anova(m1a)  ##Total SS = 5.4076e+18
-anova(m1a, m1b, m1c) 
+anova(m1a2)  ##Total SS = 2,915,906
+anova(m1a2, m1b2, m1c2) 
+# explanation of SS due to year: 32,447 
+# additional explanation of SS due to bechdel score: 53,678  
+# both significant to p < 0.001
